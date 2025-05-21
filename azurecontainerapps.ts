@@ -4,7 +4,7 @@ import { ContainerAppHelper } from './src/ContainerAppHelper';
 import { ContainerRegistryHelper } from './src/ContainerRegistryHelper';
 import { TelemetryHelper } from './src/TelemetryHelper';
 import { Utility } from './src/Utility';
-import { GitHubActionsToolHelper } from './src/GitHubActionsToolHelper';
+import { GitHubActionsToolHelper } from './src/GithubActionsToolHelper';
 
 const buildArgumentRegex = /"[^"]*"|\S+/g;
 const buildpackEnvironmentNameRegex = /^"?(BP|ORYX)_[-._a-zA-Z0-9]+"?$/
@@ -74,6 +74,8 @@ export class azurecontainerapps {
     private static acrName: string;
     private static imageToDeploy: string;
     private static yamlConfigPath: string;
+    private static revisionsMode: string;
+    private static targetLabel: string;
 
     // Resource properties
     private static containerAppName: string;
@@ -156,6 +158,12 @@ export class azurecontainerapps {
 
         // Get the YAML configuration file, if provided
         this.yamlConfigPath = this.toolHelper.getInput('yamlConfigPath', false) as string;
+
+        // Get the revisions mode if provided
+        this.revisionsMode = this.toolHelper.getInput('revisionsMode', false) as string;
+
+        // Get the target label if provided
+        this.targetLabel = this.toolHelper.getInput('targetLabel', false) as string;
 
         // Get the name of the image to build if it was provided, or generate it from build variables
         this.imageToBuild = this.toolHelper.getInput('imageToBuild', false);
@@ -629,7 +637,13 @@ export class azurecontainerapps {
         if (!this.containerAppExists) {
             if (!this.util.isNullOrEmpty(this.yamlConfigPath)) {
                 // Create the Container App from the YAML configuration file
-                await this.appHelper.createContainerAppFromYaml(this.containerAppName, this.resourceGroup, this.yamlConfigPath);
+                await this.appHelper.createContainerAppFromYaml(
+                    this.containerAppName, 
+                    this.resourceGroup, 
+                    this.yamlConfigPath,
+                    this.revisionsMode,
+                    this.targetLabel
+                );
             } else {
                 // Create the Container App from command line arguments
                 await this.appHelper.createContainerApp(this.containerAppName, this.resourceGroup, this.containerAppEnvironment, this.commandLineArgs);
@@ -640,7 +654,13 @@ export class azurecontainerapps {
 
         if (!this.util.isNullOrEmpty(this.yamlConfigPath)) {
             // Update the Container App from the YAML configuration file
-            await this.appHelper.updateContainerAppFromYaml(this.containerAppName, this.resourceGroup, this.yamlConfigPath);
+            await this.appHelper.updateContainerAppFromYaml(
+                this.containerAppName, 
+                this.resourceGroup, 
+                this.yamlConfigPath,
+                this.revisionsMode,
+                this.targetLabel
+            );
 
             return;
         }

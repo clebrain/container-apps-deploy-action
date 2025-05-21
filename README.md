@@ -124,6 +124,8 @@ need to be provided in order for this action to successfully run using one of th
 | Argument name             | Required | Description |
 | ------------------------- | -------- | ----------- |
 | `yamlConfigPath`          | Yes (for this scenario) | Full path (on the executing GitHub runner) to the YAML file detailing the configuration of the Container App. |
+| `revisionsMode`           | No | The revisions mode for the Container App. Can be either "single" or "multiple". In "single" mode, the app runs as a single revision. In "multiple" mode, multiple revisions can run concurrently. This parameter will be injected into the YAML at properties.configuration.revisionsMode. |
+| `targetLabel`             | No | The target label for directing traffic to different revisions. Only applicable when revisionsMode is "multiple" and the Container App has ingress enabled. This parameter will be injected into the YAML at properties.configuration.ingress.targetLabel. |
 
 #### Important notes on the YAML configuration file
 
@@ -264,6 +266,32 @@ properties:
 
 The values for `SUBSCRIPTION_ID`, `RESOURCE_GROUP` and `CONTAINER_APP_ENVIRONMENT` must be updated to point to the full
 resource ID of the **existing** Container App environment that the Container App will use.
+
+### Using revisionsMode and targetLabel with YAML configuration
+
+```yml
+steps:
+
+  - name: Log in to Azure
+    uses: azure/login@v1
+    with:
+      creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+  - name: Deploy Container App with multiple revisions
+    uses: azure/container-apps-deploy-action@v1
+    with:
+      yamlConfigPath: container-app-config.yaml
+      revisionsMode: multiple
+      targetLabel: production
+```
+
+This will create or update a Container App using the properties from the `container-app-config.yaml` file, and it will set the `revisionsMode` to `multiple` and the `targetLabel` to `production`. The action will inject these values into the YAML configuration before passing it to the Azure CLI.
+
+When using `multiple` revisions mode, you can deploy new revisions of your application without replacing the existing ones, and use the `targetLabel` parameter to direct traffic to specific revisions. This is useful for scenarios like blue/green deployments.
+
+These parameters will be injected into the YAML at the following locations:
+- `revisionsMode` at `properties.configuration.revisionsMode`
+- `targetLabel` at `properties.configuration.ingress.targetLabel` (if ingress exists)
 
 ### Using ACR credentials to authenticate
 

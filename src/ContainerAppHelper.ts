@@ -1,8 +1,9 @@
 import * as path from 'path';
 import * as os from 'os';
 import { Utility } from './Utility';
-import { GitHubActionsToolHelper } from './GitHubActionsToolHelper'
+import { GitHubActionsToolHelper } from './GithubActionsToolHelper'
 import fs = require('fs');
+import yaml = require('js-yaml');
 
 const ORYX_CLI_IMAGE: string = 'mcr.microsoft.com/oryx/cli:builder-debian-bullseye-20230926.1';
 const ORYX_BULLSEYE_BUILDER_IMAGE: string = 'mcr.microsoft.com/oryx/builder:debian-bullseye-20240124.1'
@@ -86,19 +87,105 @@ export class ContainerAppHelper {
     }
 
     /**
+     * Processes a YAML configuration file to inject revisionsMode and targetLabel if provided.
+     * @param yamlConfigPath - the path to the YAML configuration file
+     * @param revisionsMode - the revisions mode to inject into the YAML configuration
+     * @param targetLabel - the target label to inject into the YAML configuration
+     * @returns the path to the processed YAML file (either original or modified)
+     */
+    public async processYamlConfig(
+        yamlConfigPath: string,
+        revisionsMode?: string,
+        targetLabel?: string): Promise<string> {
+        
+        // If neither revisionsMode nor targetLabel are provided, return the original YAML file path
+        if (util.isNullOrEmpty(revisionsMode) && util.isNullOrEmpty(targetLabel)) {
+            return yamlConfigPath;
+        }
+
+        toolHelper.writeDebug(`Processing YAML config file at "${yamlConfigPath}" to inject revisionsMode and/or targetLabel`);
+        
+        try {
+            // Read the YAML file
+            const yamlContent = fs.readFileSync(yamlConfigPath, 'utf8');
+            
+            // Parse the YAML content
+            const parsedYaml = yaml.load(yamlContent) as any;
+            
+            // Initialize the necessary structure if it doesn't exist
+            if (!parsedYaml.properties) {
+                parsedYaml.properties = {};
+            }
+            if (!parsedYaml.properties.configuration) {
+                parsedYaml.properties.configuration = {};
+            }
+            
+            // Inject revisionsMode if provided
+            if (!util.isNullOrEmpty(revisionsMode)) {
+                toolHelper.writeDebug(`Injecting revisionsMode "${revisionsMode}" into YAML configuration`);
+                parsedYaml.properties.configuration.revisionsMode = revisionsMode;
+            }
+            
+            // Inject targetLabel if provided and ingress exists or needs to be created
+            if (!util.isNullOrEmpty(targetLabel)) {
+                toolHelper.writeDebug(`Injecting targetLabel "${targetLabel}" into YAML configuration`);
+                // Ensure ingress configuration exists
+                if (!parsedYaml.properties.configuration.ingress) {
+                    toolHelper.writeDebug('Creating ingress configuration in YAML as it does not exist');
+                    parsedYaml.properties.configuration.ingress = {};
+                }
+                
+                // Set the targetLabel property
+                parsedYaml.properties.configuration.ingress.targetLabel = targetLabel;
+            }
+            
+            // Create a temporary file for the modified YAML
+            const tempDir = os.tmpdir();
+            const tempFilePath = path.join(tempDir, `modified-${path.basename(yamlConfigPath)}`);
+            
+            // Write the modified YAML to the temp file
+            fs.writeFileSync(tempFilePath, yaml.dump(parsedYaml), 'utf8');
+            toolHelper.writeDebug(`Written modified YAML to temporary file "${tempFilePath}"`);
+            
+            return tempFilePath;
+            
+        } catch (err) {
+            toolHelper.writeError(`Error processing YAML config: ${err.message}`);
+            throw err;
+        }
+    }
+
+    /**
      * Creates an Azure Container App based from a YAML configuration file.
      * @param containerAppName - the name of the Container App
      * @param resourceGroup - the resource group that the Container App is found in
      * @param yamlConfigPath - the path to the YAML configuration file that the Container App properties will be based from
+     * @param revisionsMode - the revisions mode to inject into the YAML configuration
+     * @param targetLabel - the target label to inject into the YAML configuration
      */
     public async createContainerAppFromYaml(
         containerAppName: string,
         resourceGroup: string,
-        yamlConfigPath: string) {
+        yamlConfigPath: string,
+        revisionsMode?: string,
+        targetLabel?: string) {
         toolHelper.writeDebug(`Attempting to create Container App with name "${containerAppName}" in resource group "${resourceGroup}" from provided YAML "${yamlConfigPath}"`);
         try {
-            let command = `az containerapp create -n ${containerAppName} -g ${resourceGroup} --yaml ${yamlConfigPath} --output none`;
+            // Process the YAML file to inject revisionsMode and targetLabel if provided
+            const processedYamlPath = await this.processYamlConfig(yamlConfigPath, revisionsMode, targetLabel);
+            
+            let command = `az containerapp create -n ${containerAppName} -g ${resourceGroup} --yaml ${processedYamlPath} --output none`;
             await util.execute(command);
+            
+            // If we created a temporary file, clean it up
+            if (processedYamlPath !== yamlConfigPath) {
+                try {
+                    fs.unlinkSync(processedYamlPath);
+                    toolHelper.writeDebug(`Deleted temporary YAML file "${processedYamlPath}"`);
+                } catch (cleanupErr) {
+                    toolHelper.writeWarning(`Failed to delete temporary YAML file "${processedYamlPath}": ${cleanupErr.message}`);
+                }
+            }
         } catch (err) {
             toolHelper.writeError(err.message);
             throw err;
@@ -199,15 +286,32 @@ export class ContainerAppHelper {
      * @param containerAppName - the name of the existing Container App
      * @param resourceGroup - the resource group that the existing Container App is found in
      * @param yamlConfigPath - the path to the YAML configuration file that the Container App properties will be based from
+     * @param revisionsMode - the revisions mode to inject into the YAML configuration
+     * @param targetLabel - the target label to inject into the YAML configuration
      */
     public async updateContainerAppFromYaml(
         containerAppName: string,
         resourceGroup: string,
-        yamlConfigPath: string) {
+        yamlConfigPath: string,
+        revisionsMode?: string,
+        targetLabel?: string) {
         toolHelper.writeDebug(`Attempting to update Container App with name "${containerAppName}" in resource group "${resourceGroup}" from provided YAML "${yamlConfigPath}"`);
         try {
-            let command = `az containerapp update -n ${containerAppName} -g ${resourceGroup} --yaml ${yamlConfigPath} --output none`;
+            // Process the YAML file to inject revisionsMode and targetLabel if provided
+            const processedYamlPath = await this.processYamlConfig(yamlConfigPath, revisionsMode, targetLabel);
+            
+            let command = `az containerapp update -n ${containerAppName} -g ${resourceGroup} --yaml ${processedYamlPath} --output none`;
             await util.execute(command);
+            
+            // If we created a temporary file, clean it up
+            if (processedYamlPath !== yamlConfigPath) {
+                try {
+                    fs.unlinkSync(processedYamlPath);
+                    toolHelper.writeDebug(`Deleted temporary YAML file "${processedYamlPath}"`);
+                } catch (cleanupErr) {
+                    toolHelper.writeWarning(`Failed to delete temporary YAML file "${processedYamlPath}": ${cleanupErr.message}`);
+                }
+            }
         } catch (err) {
             toolHelper.writeError(err.message);
             throw err;

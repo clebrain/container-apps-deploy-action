@@ -139,6 +139,19 @@ inputs:
       this GitHub Action.'
     required: false
     default: false
+  revisionsMode:
+    description: |
+      'The revisions mode for the Container App. Can be either "single" or "multiple". In "single" mode, the app runs as
+      a single revision. In "multiple" mode, multiple revisions can run concurrently. This parameter is only used when a
+      YAML configuration file is provided via `yamlConfigPath`, and it will be injected into the YAML at
+      properties.configuration.revisionsMode.'
+    required: false
+  targetLabel:
+    description: |
+      'The target label for directing traffic to different revisions. Only applicable when revisionsMode is "multiple"
+      and the Container App has ingress enabled. This parameter is only used when a YAML configuration file is provided
+      via `yamlConfigPath`, and it will be injected into the YAML at properties.configuration.ingress.targetLabel.'
+    required: false
 
 runs:
   using: 'node16'
