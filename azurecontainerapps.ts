@@ -106,6 +106,7 @@ export class azurecontainerapps {
     private static buildArguments: string;
     private static noIngressUpdate: boolean;
     private static useInternalRegistry: boolean;
+    private static targetLabel: string;
 
     /**
      * Initializes the helpers used by this task.
@@ -159,6 +160,8 @@ export class azurecontainerapps {
 
         // Get the name of the image to build if it was provided, or generate it from build variables
         this.imageToBuild = this.toolHelper.getInput('imageToBuild', false);
+
+        this.targetLabel = this.toolHelper.getInput('targetLabel', false);
 
         // Get the user defined build arguments, if provided
         this.buildArguments = this.toolHelper.getInput('buildArguments', false);
@@ -545,6 +548,7 @@ export class azurecontainerapps {
      * file is not provided.
      */
     private static setupContainerAppProperties() {
+        this.toolHelper.writeDebug(`Setting up Container App properties...`);
         this.commandLineArgs = [];
 
         // Get the ingress inputs
@@ -565,6 +569,15 @@ export class azurecontainerapps {
                 `--registry-server ${this.registryUrl}`,
                 `--registry-username ${this.registryUsername}`,
                 `--registry-password ${this.registryPassword}`);
+        }
+
+
+        // Handle TargetLabel setup when activeRevisionsMode is Labels
+        if (!this.util.isNullOrEmpty(this.targetLabel)) {
+            this.toolHelper.writeDebug('Target label is provided. Setting up command line arguments for revisions mode "Labels".');
+
+            // If the target label is provided, add it to the command line arguments
+            this.commandLineArgs.push(`--revisions-mode Labels`, `--target-label ${this.targetLabel}`);
         }
 
         // Determine default values only for the 'create' scenario to avoid overriding existing values for the 'update' scenario
@@ -619,6 +632,9 @@ export class azurecontainerapps {
             this.commandLineArgs.push(`-i ${this.imageToDeploy}`);
         } else if (!this.util.isNullOrEmpty(this.appSourcePath) && this.useInternalRegistry) {
             this.commandLineArgs.push(`--source ${this.appSourcePath}`);
+        } else if (!this.util.isNullOrEmpty(this.targetLabel)) {
+            // If the target label is provided, add it to the command line arguments
+            this.commandLineArgs.push(`--revisions-mode Labels`, `--target-label ${this.targetLabel}`);
         }
     }
 
@@ -626,11 +642,14 @@ export class azurecontainerapps {
      * Creates or updates the Container App.
      */
     private static async createOrUpdateContainerApp() {
+        this.toolHelper.writeInfo(`Creating or updating Container App "${this.containerAppName}" in resource group "${this.resourceGroup}"...`);
         if (!this.containerAppExists) {
             if (!this.util.isNullOrEmpty(this.yamlConfigPath)) {
+                this.toolHelper.writeInfo(`Creating Container App "${this.containerAppName}" from YAML configuration file "${this.yamlConfigPath}"...`);
                 // Create the Container App from the YAML configuration file
                 await this.appHelper.createContainerAppFromYaml(this.containerAppName, this.resourceGroup, this.yamlConfigPath);
             } else {
+                this.toolHelper.writeInfo(`Creating Container App "${this.containerAppName}" from command line arguments...`);
                 // Create the Container App from command line arguments
                 await this.appHelper.createContainerApp(this.containerAppName, this.resourceGroup, this.containerAppEnvironment, this.commandLineArgs);
             }

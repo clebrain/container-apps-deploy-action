@@ -138,8 +138,12 @@ inputs:
       not provided, telemetry will be sent to Microsoft about the Container App build and deploy scenario targeted by
       this GitHub Action.'
     required: false
-    default: false
-
+    default: 'false'
+  targetLabel:
+    description: |
+       'Specifies the target label for the Azure Container App revision. 
+       This will replace any prior revision with the given label. This is required when using ActiveRevisionMode: Labels.'
+    required: false
 runs:
   using: 'node16'
   main: 'dist/index.js'

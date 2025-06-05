@@ -32,15 +32,18 @@ export class ContainerAppHelper {
         resourceGroup: string,
         environment: string,
         optionalCmdArgs: string[]) {
+    
         toolHelper.writeDebug(`Attempting to create Container App with name "${containerAppName}" in resource group "${resourceGroup}"`);
         try {
             let command = `az containerapp create -n ${containerAppName} -g ${resourceGroup} --environment ${environment} --output none`;
+
             optionalCmdArgs.forEach(function (val: string) {
                 command += ` ${val}`;
             });
+        
             await util.execute(command);
         } catch (err) {
-            toolHelper.writeError(err.message);
+            toolHelper.writeError(`Error occurred while creating Container App "${containerAppName}": ${err.message}`);
             throw err;
         }
     }
