@@ -428,9 +428,7 @@ export class azurecontainerapps {
         // Get the build arguments to pass to the Dockerfile or builder
         let buildArguments: string[] = [];
         if (!this.util.isNullOrEmpty(this.buildArguments)) {
-            this.buildArguments.match(buildArgumentRegex).forEach((buildArg) => {
-                buildArguments.push(buildArg);
-            });
+            buildArguments = this.buildArguments.match(buildArgumentRegex);
         }
 
         // Get Dockerfile to build, if provided, or check if one exists at the root of the provided application
@@ -507,9 +505,7 @@ export class azurecontainerapps {
 
         // Add user-specified build environment variables
         if (buildArguments.length > 0) {
-            buildArguments.forEach((buildArg) => {
-                environmentVariables.push(buildArg);
-            });
+            environmentVariables.push(...buildArguments);
         }
 
         this.toolHelper.writeInfo(`Building image "${imageToBuild}" using the Oryx++ Builder`);
