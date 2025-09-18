@@ -562,9 +562,9 @@ export class azurecontainerapps {
             (!this.containerAppExists || (this.containerAppExists && !this.noIngressUpdate))) {
             this.adminCredentialsProvided = true;
             this.commandLineArgs.push(
-                `--registry-server ${this.registryUrl}`,
-                `--registry-username ${this.registryUsername}`,
-                `--registry-password ${this.registryPassword}`);
+                '--registry-server', this.registryUrl,
+                '--registry-username', this.registryUsername,
+                '--registry-password', this.registryPassword);
         }
 
 
@@ -573,7 +573,7 @@ export class azurecontainerapps {
             this.toolHelper.writeDebug('Target label is provided. Setting up command line arguments for revisions mode "Labels".');
 
             // If the target label is provided, add it to the command line arguments
-            this.commandLineArgs.push(`--revisions-mode Labels`, `--target-label ${this.targetLabel}`);
+            this.commandLineArgs.push('--revisions-mode', 'Labels', '--target-label', this.targetLabel);
         }
 
         // Determine default values only for the 'create' scenario to avoid overriding existing values for the 'update' scenario
@@ -605,8 +605,8 @@ export class azurecontainerapps {
 
                 // Add the ingress value and target port to the optional arguments array
                 // Note: this step should be skipped if we're updating an existing Container App (ingress is enabled via a separate command)
-                this.commandLineArgs.push(`--ingress ${this.ingress}`);
-                this.commandLineArgs.push(`--target-port ${this.targetPort}`);
+                this.commandLineArgs.push('--ingress', this.ingress);
+                this.commandLineArgs.push('--target-port', this.targetPort);
             }
         }
 
@@ -617,20 +617,20 @@ export class azurecontainerapps {
             // The --replace-env-vars flag is only used for the 'update' command,
             // otherwise --env-vars is used for 'create' and 'up'
             if (isCappUpdateCommandUsed) {
-                this.commandLineArgs.push(`--replace-env-vars ${environmentVariables}`);
+                this.commandLineArgs.push('--replace-env-vars', environmentVariables);
             } else {
-                this.commandLineArgs.push(`--env-vars ${environmentVariables}`);
+                this.commandLineArgs.push('--env-vars', environmentVariables);
             }
         }
 
         // Ensure '-i' argument and '--source' argument are not both provided
         if (!this.util.isNullOrEmpty(this.imageToDeploy)) {
-            this.commandLineArgs.push(`-i ${this.imageToDeploy}`);
+            this.commandLineArgs.push('-i', this.imageToDeploy);
         } else if (!this.util.isNullOrEmpty(this.appSourcePath) && this.useInternalRegistry) {
-            this.commandLineArgs.push(`--source ${this.appSourcePath}`);
+            this.commandLineArgs.push('--source', this.appSourcePath);
         } else if (!this.util.isNullOrEmpty(this.targetLabel)) {
             // If the target label is provided, add it to the command line arguments
-            this.commandLineArgs.push(`--revisions-mode Labels`, `--target-label ${this.targetLabel}`);
+            this.commandLineArgs.push('--revisions-mode', 'Labels', '--target-label', this.targetLabel);
         }
     }
 
