@@ -610,16 +610,16 @@ export class azurecontainerapps {
             }
         }
 
-        const environmentVariables: string = this.toolHelper.getInput('environmentVariables', false);
+        const environmentVariables = this.toolHelper.getInput('environmentVariables', false).split(/\s+/g).filter(Boolean);
         const isCappUpdateCommandUsed: boolean = this.noIngressUpdate || (!this.noIngressUpdate && !this.adminCredentialsProvided)
         // Add user-specified environment variables
-        if (!this.util.isNullOrEmpty(environmentVariables)) {
+        if (environmentVariables.length) {
             // The --replace-env-vars flag is only used for the 'update' command,
             // otherwise --env-vars is used for 'create' and 'up'
             if (isCappUpdateCommandUsed) {
-                this.commandLineArgs.push(`--replace-env-vars ${environmentVariables}`);
+                this.commandLineArgs.push('--replace-env-vars', ...environmentVariables);
             } else {
-                this.commandLineArgs.push(`--env-vars ${environmentVariables}`);
+                this.commandLineArgs.push('--set-env-vars', ...environmentVariables);
             }
         }
 
