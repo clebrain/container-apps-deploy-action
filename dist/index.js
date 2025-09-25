@@ -23,7 +23,7 @@ const ContainerAppHelper_1 = __nccwpck_require__(3135);
 const ContainerRegistryHelper_1 = __nccwpck_require__(3745);
 const TelemetryHelper_1 = __nccwpck_require__(7546);
 const Utility_1 = __nccwpck_require__(6393);
-const GithubActionsToolHelper_1 = __nccwpck_require__(3921);
+const GitHubActionsToolHelper_1 = __nccwpck_require__(1569);
 const buildArgumentRegex = /"[^"]*"|\S+/g;
 const buildpackEnvironmentNameRegex = /^"?(BP|ORYX)_[-._a-zA-Z0-9]+"?$/;
 class azurecontainerapps {
@@ -82,7 +82,7 @@ class azurecontainerapps {
         // Set up Utility for managing miscellaneous calls
         this.util = new Utility_1.Utility();
         // Set up toolHelper for managing calls to the GitHub Actions toolkit
-        this.toolHelper = new GithubActionsToolHelper_1.GitHubActionsToolHelper();
+        this.toolHelper = new GitHubActionsToolHelper_1.GitHubActionsToolHelper();
         let disableTelemetry = this.toolHelper.getInput('disableTelemetry').toLowerCase() === 'true';
         // Get buildId
         this.buildId = this.toolHelper.getBuildId();
@@ -467,6 +467,14 @@ class azurecontainerapps {
         this.noIngressUpdate = this.containerAppExists &&
             this.util.isNullOrEmpty(this.targetPort) &&
             (this.util.isNullOrEmpty(this.ingress) || this.ingress == 'disabled');
+        const cpu = this.toolHelper.getInput('cpu', false);
+        if (cpu) {
+            this.commandLineArgs.push('--cpu', cpu);
+        }
+        const memory = this.toolHelper.getInput('memory', false);
+        if (memory) {
+            this.commandLineArgs.push('--memory', memory);
+        }
         // Pass the Container Registry credentials when creating a Container App or updating a Container App via the 'up' command
         if (!this.util.isNullOrEmpty(this.registryUrl) && !this.util.isNullOrEmpty(this.registryUsername) && !this.util.isNullOrEmpty(this.registryPassword) &&
             (!this.containerAppExists || (this.containerAppExists && !this.noIngressUpdate))) {
@@ -4557,7 +4565,7 @@ exports.ContainerAppHelper = void 0;
 const path = __nccwpck_require__(6928);
 const os = __nccwpck_require__(857);
 const Utility_1 = __nccwpck_require__(6393);
-const GithubActionsToolHelper_1 = __nccwpck_require__(3921);
+const GitHubActionsToolHelper_1 = __nccwpck_require__(1569);
 const fs = __nccwpck_require__(9896);
 const ORYX_CLI_IMAGE = 'mcr.microsoft.com/oryx/cli:builder-debian-bullseye-20230926.1';
 const ORYX_BULLSEYE_BUILDER_IMAGE = 'mcr.microsoft.com/oryx/builder:debian-bullseye-20240124.1';
@@ -4565,7 +4573,7 @@ const ORYX_BOOKWORM_BUILDER_IMAGE = 'mcr.microsoft.com/oryx/builder:debian-bookw
 const ORYX_BUILDER_IMAGES = [ORYX_BULLSEYE_BUILDER_IMAGE, ORYX_BOOKWORM_BUILDER_IMAGE];
 const IS_WINDOWS_AGENT = os.platform() == 'win32';
 const PACK_CMD = IS_WINDOWS_AGENT ? path.join(os.tmpdir(), 'pack') : 'pack';
-const toolHelper = new GithubActionsToolHelper_1.GitHubActionsToolHelper();
+const toolHelper = new GitHubActionsToolHelper_1.GitHubActionsToolHelper();
 const util = new Utility_1.Utility();
 class ContainerAppHelper {
     constructor(disableTelemetry) {
@@ -5149,8 +5157,8 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ContainerRegistryHelper = void 0;
 const os = __nccwpck_require__(857);
 const Utility_1 = __nccwpck_require__(6393);
-const GithubActionsToolHelper_1 = __nccwpck_require__(3921);
-const toolHelper = new GithubActionsToolHelper_1.GitHubActionsToolHelper();
+const GitHubActionsToolHelper_1 = __nccwpck_require__(1569);
+const toolHelper = new GitHubActionsToolHelper_1.GitHubActionsToolHelper();
 const util = new Utility_1.Utility();
 class ContainerRegistryHelper {
     /**
@@ -5211,7 +5219,7 @@ exports.ContainerRegistryHelper = ContainerRegistryHelper;
 
 /***/ }),
 
-/***/ 3921:
+/***/ 1569:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -5331,7 +5339,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.TelemetryHelper = void 0;
 const Utility_1 = __nccwpck_require__(6393);
-const GithubActionsToolHelper_1 = __nccwpck_require__(3921);
+const GitHubActionsToolHelper_1 = __nccwpck_require__(1569);
 const ORYX_CLI_IMAGE = "mcr.microsoft.com/oryx/cli:debian-buster-20230207.2";
 const SUCCESSFUL_RESULT = "succeeded";
 const FAILED_RESULT = "failed";
@@ -5339,7 +5347,7 @@ const BUILDER_SCENARIO = "used-builder";
 const DOCKERFILE_SCENARIO = "used-dockerfile";
 const IMAGE_SCENARIO = "used-image";
 const util = new Utility_1.Utility();
-const toolHelper = new GithubActionsToolHelper_1.GitHubActionsToolHelper();
+const toolHelper = new GitHubActionsToolHelper_1.GitHubActionsToolHelper();
 class TelemetryHelper {
     constructor(disableTelemetry) {
         this.disableTelemetry = disableTelemetry;
@@ -5429,8 +5437,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Utility = void 0;
 // Note: This file is used to define utility functions that can be used across the project.
-const GithubActionsToolHelper_1 = __nccwpck_require__(3921);
-const toolHelper = new GithubActionsToolHelper_1.GitHubActionsToolHelper();
+const GitHubActionsToolHelper_1 = __nccwpck_require__(1569);
+const toolHelper = new GitHubActionsToolHelper_1.GitHubActionsToolHelper();
 class Utility {
     /**
      * @param commandLine - the command to execute
