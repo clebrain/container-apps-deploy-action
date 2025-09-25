@@ -144,6 +144,12 @@ inputs:
        'Specifies the target label for the Azure Container App revision. 
        This will replace any prior revision with the given label. This is required when using ActiveRevisionMode: Labels.'
     required: false
+  cpu:
+    description: Required CPU in cores from 0.25 - 2.0, e.g. 0.5. Should not be provided unappropriately.
+    required: false
+  memory:
+    description: Required memory from 0.5 - 4.0 ending with "Gi", e.g. 1.0Gi. Should not be provided unappropriately.
+    required: false
 runs:
   using: 'node16'
   main: 'dist/index.js'
