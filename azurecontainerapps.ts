@@ -557,6 +557,15 @@ export class azurecontainerapps {
             this.util.isNullOrEmpty(this.targetPort) &&
             (this.util.isNullOrEmpty(this.ingress) || this.ingress == 'disabled');
 
+        const cpu = this.toolHelper.getInput('cpu', false);
+        if (cpu) {
+            this.commandLineArgs.push('--cpu', cpu);
+        }
+        const memory = this.toolHelper.getInput('memory', false);
+        if (memory) {
+            this.commandLineArgs.push('--memory', memory);
+        }
+
         // Pass the Container Registry credentials when creating a Container App or updating a Container App via the 'up' command
         if (!this.util.isNullOrEmpty(this.registryUrl) && !this.util.isNullOrEmpty(this.registryUsername) && !this.util.isNullOrEmpty(this.registryPassword) &&
             (!this.containerAppExists || (this.containerAppExists && !this.noIngressUpdate))) {
